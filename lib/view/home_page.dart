@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:movie_list/model/movie.dart';
 
 import 'add_movie_page.dart';
+import 'movie_detail_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -37,6 +38,16 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  _seeDetails(BuildContext context, Movie movie) async {
+    final res = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => MovieDetailPage(movie: movie)),
+    );
+    if (res is int) {
+      debugPrint(res.toString());
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
@@ -44,7 +55,10 @@ class _HomePageState extends State<HomePage> {
         ),
         body: ListView.builder(
           itemCount: _movieList.length,
-          itemBuilder: (_, pos) => ListItem(movie: _movieList[pos]),
+          itemBuilder: (_, pos) => ListItem(
+            movie: _movieList[pos],
+            onTap: _seeDetails,
+          ),
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () => _addMovie(context),
@@ -54,9 +68,14 @@ class _HomePageState extends State<HomePage> {
 }
 
 class ListItem extends StatelessWidget {
-  const ListItem({super.key, required this.movie});
+  const ListItem({
+    super.key,
+    required this.movie,
+    required this.onTap,
+  });
 
   final Movie movie;
+  final Function(BuildContext, Movie) onTap;
 
   Color _getColor() {
     switch (movie.rate) {
@@ -72,6 +91,7 @@ class ListItem extends StatelessWidget {
         color: Colors.white,
         elevation: 2.0,
         child: ListTile(
+          onTap: () => onTap(context, movie),
           leading: CircleAvatar(
             backgroundColor: _getColor(),
             child: Text(

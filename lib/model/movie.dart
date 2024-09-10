@@ -1,4 +1,5 @@
 class Movie {
+  int? id;
   final String title;
   final int rate;
   final int year;
