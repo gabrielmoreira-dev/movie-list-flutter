@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:movie_list/model/movie.dart';
 
+import 'add_movie_page.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -9,11 +11,11 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<Movie> movieList = [];
+  List<Movie> _movieList = [];
 
   @override
   void initState() {
-    movieList = [
+    _movieList = [
       Movie(title: "Joker", rate: 5, year: 2019, studio: "Warner Bros"),
       Movie(title: "Joker", rate: 5, year: 2019, studio: "Warner Bros"),
       Movie(title: "Joker", rate: 5, year: 2019, studio: "Warner Bros"),
@@ -23,7 +25,17 @@ class _HomePageState extends State<HomePage> {
     super.initState();
   }
 
-  _addMovie() {}
+  _addMovie(BuildContext context) async {
+    final res = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => AddMoviePage()),
+    );
+    if (res is Movie) {
+      setState(() {
+        _movieList.add(res);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -31,10 +43,13 @@ class _HomePageState extends State<HomePage> {
           title: const Text("Movie List"),
         ),
         body: ListView.builder(
-          itemCount: movieList.length,
-          itemBuilder: (_, pos) => ListItem(movie: movieList[pos]),
+          itemCount: _movieList.length,
+          itemBuilder: (_, pos) => ListItem(movie: _movieList[pos]),
         ),
-        floatingActionButton: FloatingActionButton(onPressed: _addMovie),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => _addMovie(context),
+          child: const Icon(Icons.add),
+        ),
       );
 }
 
