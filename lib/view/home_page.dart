@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:movie_list/model/movie.dart';
+import 'package:movie_list/util/db_helper.dart';
 
 import 'add_movie_page.dart';
 import 'movie_detail_page.dart';
@@ -13,16 +14,19 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<Movie> _movieList = [];
+  final _dbHelper = DBHelper();
+
+  _getData() => _dbHelper.initializeDB().then((result) {
+        _dbHelper.getMovies().then((result) {
+          setState(() {
+            _movieList = result.map(Movie.fromMap).toList();
+          });
+        });
+      });
 
   @override
   void initState() {
-    _movieList = [
-      Movie(title: "Joker", rate: 5, year: 2019, studio: "Warner Bros"),
-      Movie(title: "Joker", rate: 5, year: 2019, studio: "Warner Bros"),
-      Movie(title: "Joker", rate: 5, year: 2019, studio: "Warner Bros"),
-      Movie(title: "Joker", rate: 5, year: 2019, studio: "Warner Bros"),
-      Movie(title: "Joker", rate: 4, year: 2019, studio: "Warner Bros"),
-    ];
+    _getData();
     super.initState();
   }
 
@@ -32,9 +36,8 @@ class _HomePageState extends State<HomePage> {
       MaterialPageRoute(builder: (_) => AddMoviePage()),
     );
     if (res is Movie) {
-      setState(() {
-        _movieList.add(res);
-      });
+      _dbHelper.insertMovie(res);
+      _getData();
     }
   }
 
@@ -44,7 +47,8 @@ class _HomePageState extends State<HomePage> {
       MaterialPageRoute(builder: (_) => MovieDetailPage(movie: movie)),
     );
     if (res is int) {
-      debugPrint(res.toString());
+      _dbHelper.deleteMovie(res);
+      _getData();
     }
   }
 
