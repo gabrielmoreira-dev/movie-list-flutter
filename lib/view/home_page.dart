@@ -13,16 +13,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  bool _isFirebaseEnabled = false;
   List<Movie> _movieList = [];
   final _dbHelper = DBHelper();
-
-  _getData() => _dbHelper.initializeDB().then((result) {
-        _dbHelper.getMovies().then((result) {
-          setState(() {
-            _movieList = result.map(Movie.fromMap).toList();
-          });
-        });
-      });
 
   @override
   void initState() {
@@ -30,15 +23,35 @@ class _HomePageState extends State<HomePage> {
     super.initState();
   }
 
+  _getData() => _isFirebaseEnabled ? _getExternalData() : _getInternalData();
+
+  _getExternalData() => setState(() {
+    _movieList = [];
+  });
+
+  _getInternalData() => _dbHelper.initializeDB().then((result) {
+        _dbHelper.getMovies().then((result) {
+          setState(() {
+            _movieList = result.map(Movie.fromMap).toList();
+          });
+        });
+      });
+
   _addMovie(BuildContext context) async {
     final res = await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => AddMoviePage()),
     );
     if (res is Movie) {
-      _dbHelper.insertMovie(res);
-      _getData();
+      _isFirebaseEnabled ? _addExternalData(res) : _addInternalData(res);
     }
+  }
+
+  _addExternalData(Movie movie) => null;
+
+  _addInternalData(Movie movie) {
+    _dbHelper.insertMovie(movie);
+    _getData();
   }
 
   _seeDetails(BuildContext context, Movie movie) async {
@@ -47,9 +60,20 @@ class _HomePageState extends State<HomePage> {
       MaterialPageRoute(builder: (_) => MovieDetailPage(movie: movie)),
     );
     if (res is int) {
-      _dbHelper.deleteMovie(res);
-      _getData();
+      _isFirebaseEnabled ? _deleteExternalData(res) : _deleteInternalData(res);
     }
+  }
+
+  _deleteExternalData(int id) => null;
+
+  _deleteInternalData(int id) {
+    _dbHelper.deleteMovie(id);
+    _getData();
+  } 
+
+  _onStorageChange(bool value) {
+    setState(() => _isFirebaseEnabled = value);
+    _getData();
   }
 
   @override
@@ -57,12 +81,28 @@ class _HomePageState extends State<HomePage> {
         appBar: AppBar(
           title: const Text("Movie List"),
         ),
-        body: ListView.builder(
-          itemCount: _movieList.length,
-          itemBuilder: (_, pos) => ListItem(
-            movie: _movieList[pos],
-            onTap: _seeDetails,
-          ),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("External storage"),
+                  Switch(value: _isFirebaseEnabled, onChanged: _onStorageChange),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _movieList.length,
+                itemBuilder: (_, pos) => ListItem(
+                  movie: _movieList[pos],
+                  onTap: _seeDetails,
+                ),
+              ),
+            ),
+          ],
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () => _addMovie(context),
