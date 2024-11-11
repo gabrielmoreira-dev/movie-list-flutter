@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:movie_list/model/movie.dart';
 import 'package:movie_list/util/db_helper.dart';
+import 'package:movie_list/util/firebase_helper.dart';
 
 import 'add_movie_page.dart';
 import 'movie_detail_page.dart';
@@ -16,6 +17,7 @@ class _HomePageState extends State<HomePage> {
   bool _isFirebaseEnabled = false;
   List<Movie> _movieList = [];
   final _dbHelper = DBHelper();
+  final _firebaseHelper = FirebaseHelper();
 
   @override
   void initState() {
@@ -25,9 +27,9 @@ class _HomePageState extends State<HomePage> {
 
   _getData() => _isFirebaseEnabled ? _getExternalData() : _getInternalData();
 
-  _getExternalData() => setState(() {
-    _movieList = [];
-  });
+  _getExternalData() => _firebaseHelper.getMovies().then(
+        (value) => setState(() => _movieList = value),
+      );
 
   _getInternalData() => _dbHelper.initializeDB().then((result) {
         _dbHelper.getMovies().then((result) {
@@ -37,39 +39,37 @@ class _HomePageState extends State<HomePage> {
         });
       });
 
-  _addMovie(BuildContext context) async {
-    final res = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => AddMoviePage()),
-    );
-    if (res is Movie) {
-      _isFirebaseEnabled ? _addExternalData(res) : _addInternalData(res);
-    }
-  }
+  _addMovie(BuildContext context) => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => AddMoviePage()),
+      ).then((res) {
+        if (res is Movie) {
+          _isFirebaseEnabled ? _addExternalData(res) : _addInternalData(res);
+        }
+      });
 
-  _addExternalData(Movie movie) => null;
+  _addExternalData(Movie movie) =>
+      _firebaseHelper.insertMovie(movie).then((_) => _getData());
 
-  _addInternalData(Movie movie) {
-    _dbHelper.insertMovie(movie);
-    _getData();
-  }
+  _addInternalData(Movie movie) =>
+      _dbHelper.insertMovie(movie).then((_) => _getData());
 
-  _seeDetails(BuildContext context, Movie movie) async {
-    final res = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => MovieDetailPage(movie: movie)),
-    );
-    if (res is int) {
-      _isFirebaseEnabled ? _deleteExternalData(res) : _deleteInternalData(res);
-    }
-  }
+  _seeDetails(BuildContext context, Movie movie) => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => MovieDetailPage(movie: movie)),
+      ).then((res) {
+        if (res is String) {
+          _isFirebaseEnabled
+              ? _deleteExternalData(res)
+              : _deleteInternalData(res);
+        }
+      });
 
-  _deleteExternalData(int id) => null;
+  _deleteExternalData(String id) =>
+      _firebaseHelper.deleteMovie(id).then((_) => _getData());
 
-  _deleteInternalData(int id) {
-    _dbHelper.deleteMovie(id);
-    _getData();
-  } 
+  _deleteInternalData(String id) =>
+      _dbHelper.deleteMovie(id).then((_) => _getData());
 
   _onStorageChange(bool value) {
     setState(() => _isFirebaseEnabled = value);
@@ -89,7 +89,8 @@ class _HomePageState extends State<HomePage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text("External storage"),
-                  Switch(value: _isFirebaseEnabled, onChanged: _onStorageChange),
+                  Switch(
+                      value: _isFirebaseEnabled, onChanged: _onStorageChange),
                 ],
               ),
             ),

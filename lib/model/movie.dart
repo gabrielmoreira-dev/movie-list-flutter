@@ -1,5 +1,5 @@
 class Movie {
-  int? id;
+  String? id;
   final String title;
   final int rate;
   final int year;
@@ -21,7 +21,7 @@ class Movie {
   });
 
   Movie.fromMap(dynamic o)
-      : id = o["id"],
+      : id = o["id"].toString(),
         title = o["title"],
         rate = o["rate"],
         year = o["year"],

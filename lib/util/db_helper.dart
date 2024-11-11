@@ -46,8 +46,8 @@ class DBHelper {
 
   Future<List> getMovies() async {
     final db = await this.db;
-    return await db
-        .rawQuery("SELECT * FROM $movieTable ORDER BY $rateField DESC, $titleField ASC");
+    return await db.rawQuery(
+        "SELECT * FROM $movieTable ORDER BY $rateField DESC, $titleField ASC");
   }
 
   Future<int> updateMovie(Movie movie) async {
@@ -60,7 +60,7 @@ class DBHelper {
     );
   }
 
-  Future<int> deleteMovie(int id) async {
+  Future<int> deleteMovie(String id) async {
     final db = await this.db;
     return await db.rawDelete("DELETE FROM $movieTable WHERE $idField = $id");
   }
